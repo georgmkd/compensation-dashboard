@@ -23,13 +23,40 @@
     return s;
   }
 
-  function factor(country, from, to) {
+  function factorBetweenDates(country, fromDateIso, toDate = new Date()) {
     const arr = cpi[country];
     if (!arr) return 1;
+
+    const from = new Date(fromDateIso + "T00:00:00");
+    if (Number.isNaN(from.getTime()) || from >= toDate) return 1;
+
     let f = 1;
-    for (let y = from + 1; y <= to; y++) {
+    const startYear = from.getFullYear();
+    const endYear = Math.min(toDate.getFullYear(), years[years.length - 1]);
+
+    for (let y = startYear; y <= endYear; y++) {
       const idx = years.indexOf(y);
-      if (idx >= 0) f *= 1 + arr[idx] / 100;
+      if (idx < 0) continue;
+
+      const annualRate = arr[idx] / 100;
+      let fraction = 1;
+
+      // For the compensation-update year, only inflation after that date counts.
+      if (y === startYear) {
+        const startOfYear = new Date(y,0,1);
+        const endOfYear = new Date(y+1,0,1);
+        fraction *= Math.max(0, (endOfYear - from) / (endOfYear - startOfYear));
+      }
+
+      // For the current year, use CPI only up to today's date.
+      if (y === endYear && y === toDate.getFullYear()) {
+        const startOfYear = new Date(y,0,1);
+        const endOfYear = new Date(y+1,0,1);
+        fraction *= Math.max(0, Math.min(1, (toDate - startOfYear) / (endOfYear - startOfYear)));
+      }
+
+      // Approximation using the latest available annual CPI rate prorated by date.
+      f *= Math.pow(1 + annualRate, fraction);
     }
     return f;
   }
@@ -100,22 +127,26 @@
       const currentYear = today.getFullYear();
       const comparisonYear = Math.min(currentYear, years[years.length - 1]);
       const normalized = p.entries.map(e => ({
-        ...e, equiv:e.comp * factor(p.country,e.year,comparisonYear)
+        ...e, equiv:e.comp * factorBetweenDates(p.country,e.date,today)
       }));
       const strongest = [...normalized].sort((a,b) =>
         (b.equiv-a.equiv) || b.date.localeCompare(a.date)
       )[0];
       const target = strongest.equiv;
-      const currentEquivalent = latest.comp * factor(p.country,latest.year,comparisonYear);
-      const gap = Math.max(0,target-currentEquivalent);
-      const raise = currentEquivalent > 0 ? gap/currentEquivalent*100 : 0;
+      const currentEquivalent = latest.comp * factorBetweenDates(p.country,latest.date,today);
+      // Raise decision compares the CPI-adjusted target with the employee's
+      // actual latest recorded compensation, not an inflation-adjusted copy
+      // of that current salary.
+      const gap = Math.max(0,target-latest.comp);
+      const raise = latest.comp > 0 ? gap/latest.comp*100 : 0;
       const latestDate = new Date(latest.date + "T00:00:00");
       const ageDays = Math.floor((today - latestDate) / 86400000);
       const status = latestDate > today ? "Future entry" :
         latest.year < currentYear ? "Update due" :
         latest.year === currentYear ? "Current" : "Future entry";
+      const inflationSinceUpdate = (factorBetweenDates(p.country,latest.date,today)-1)*100;
       return {...p,latest,latestYear,currentYear,comparisonYear,currentEquivalent,
-        normalized,strongest,target,gap,raise,needs:gap>.5,status,ageDays};
+        normalized,strongest,target,gap,raise,needs:gap>.5,status,ageDays,inflationSinceUpdate};
     }).sort((a,b) => b.raise-a.raise);
 
     refreshFilters();
@@ -160,7 +191,7 @@
         <td>${p.needs ? money(p.gap,p.currency) : "—"}</td>
         <td><strong>${p.needs ? "+"+p.raise.toFixed(1)+"%" : "0%"}</strong></td>
         <td><span class="pill ${p.status==="Current"?"ok":"warning"}">${p.status}</span>
-          <small>${p.status==="Update due" ? "Latest: "+formatDate(p.latest.date) : (p.needs ? "Raise needed" : "At / above target")}</small></td>
+          <small>Since ${formatDate(p.latest.date)}: ${p.inflationSinceUpdate.toFixed(1)}% CPI adj.</small></td>
       </tr>`).join("") :
       '<tr><td colspan="8" class="empty">Upload a spreadsheet or load demo data.</td></tr>';
 
@@ -172,10 +203,11 @@
   function showDetail(p) {
     $("detail").classList.remove("hidden");
     $("detailName").textContent = p.name;
-    $("detailMeta").textContent = `${p.country} • ${p.currency} • ${p.entries.length} compensation entries`;
+    $("detailMeta").textContent = `${p.country} • ${p.currency} • latest update ${formatDate(p.latest.date)} • CPI adjusted to today`;
     $("detailCards").innerHTML = `
       <article class="metric"><span>Current salary</span><strong>${money(p.latest.comp,p.currency)}</strong></article>
       <article class="metric target"><span>Equal-comp target</span><strong>${money(p.target,p.currency)}</strong></article>
+      <article class="metric"><span>CPI since latest update</span><strong>${p.inflationSinceUpdate.toFixed(1)}%</strong></article>
       <article class="metric"><span>Required adjustment</span><strong>${p.needs ? "+"+money(p.gap,p.currency)+" / +"+p.raise.toFixed(1)+"%" : "No raise required"}</strong></article>`;
     const max = Math.max(...p.normalized.map(e=>e.equiv));
     $("history").innerHTML = p.normalized.map(e => {

@@ -71,8 +71,8 @@
 
   <section class="card methodology">
     <h2>Methodology</h2>
-    <p>For each employee, historical compensation is compounded forward using annual CPI for that employee's country. Every salary is expressed at the current year's price level where CPI data is available. The highest inflation-adjusted salary becomes the strongest historical compensation benchmark. The latest recorded salary is adjusted to the current year and compared with that benchmark to calculate the raise required for equal purchasing power. The status also checks whether the latest compensation record belongs to the current calendar year.</p>
-    <p class="hint">Prototype CPI dataset covers North Macedonia, Uruguay, Argentina, Brazil, Netherlands and United States for 2017–2026. 2025–2026 figures may include estimates and should be replaced with finalized official observations when available.</p>
+    <p>For each employee, historical compensation is compounded forward using annual CPI for that employee's country. Every salary is adjusted from its exact compensation-update date toward today's date. For the current year, only the portion of CPI up to the current date is applied. The highest inflation-adjusted salary becomes the strongest historical compensation benchmark. The target salary is CPI-adjusted through today's latest CPI period, then compared directly with the employee's latest actual recorded salary. Gap = target today − latest actual salary; required raise % = gap ÷ latest actual salary. The status also checks whether the latest compensation record belongs to the current calendar year.</p>
+    <p class="hint">Prototype CPI dataset covers North Macedonia, Uruguay, Argentina, Brazil, Netherlands and United States for 2017–2026. The current implementation prorates annual CPI by date; for production, replace this with official monthly CPI observations so the calculation runs precisely from the employee's last compensation date to the latest published CPI month.</p>
   </section>
 </main>
 

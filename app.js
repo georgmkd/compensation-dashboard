@@ -273,6 +273,27 @@
   ["countryFilter","needFilter"].forEach(id=>$(id).addEventListener("change",render));
   $("search").addEventListener("input",render);
   $("closeDetail").addEventListener("click",()=>$("detail").classList.add("hidden"));
+
+  $("manualDate").value = new Date().toISOString().slice(0,10);
+  $("manualForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const record = {
+      name: $("manualName").value.trim(),
+      country: $("manualCountry").value,
+      date: $("manualDate").value,
+      compensation: $("manualCompensation").value,
+      currency: $("manualCurrency").value
+    };
+    if (!record.name || !record.date || !record.compensation) {
+      $("manualStatus").textContent = "Please complete all fields.";
+      return;
+    }
+    raw.push(record);
+    analyze();
+    $("manualStatus").textContent = `Added ${record.name} — ${formatDate(record.date)} — ${money(Number(record.compensation),record.currency)}.`;
+    $("manualCompensation").value = "";
+  });
+
   $("demo").addEventListener("click",()=>{
     raw=[
       {name:"Michael Anderson",country:"North Macedonia",date:"2022-01-01",compensation:4100,currency:"USD"},

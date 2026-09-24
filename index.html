@@ -24,6 +24,34 @@
     <div id="status" class="status" aria-live="polite"></div>
   </section>
 
+
+  <section class="card manual-entry">
+    <div class="section-head">
+      <h2>Add compensation record manually</h2>
+      <p>Add a new employee or another compensation record for an existing employee. Matching uses name + country + currency.</p>
+    </div>
+    <form id="manualForm" class="manual-grid">
+      <label>First &amp; Last Name<input id="manualName" required placeholder="Jane Janev"></label>
+      <label>Country
+        <select id="manualCountry" required>
+          <option value="North Macedonia">North Macedonia</option>
+          <option value="Uruguay">Uruguay</option>
+          <option value="Argentina">Argentina</option>
+          <option value="Brazil">Brazil</option>
+          <option value="Netherlands">Netherlands</option>
+          <option value="USA">United States</option>
+        </select>
+      </label>
+      <label>Date<input id="manualDate" type="date" required></label>
+      <label>Compensation<input id="manualCompensation" type="number" min="0" step="0.01" required placeholder="4800"></label>
+      <label>Currency
+        <select id="manualCurrency" required><option value="USD">USD</option><option value="EUR">EUR</option></select>
+      </label>
+      <button class="primary manual-submit" type="submit">Add record</button>
+    </form>
+    <div id="manualStatus" class="status" aria-live="polite"></div>
+  </section>
+
   <section class="toolbar">
     <button id="demo" type="button">Load demo data</button>
     <select id="countryFilter"><option value="ALL">All countries</option></select>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Compensation Purchasing Power Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="app">
+  <header>
+    <div>
+      <h1>Compensation Purchasing Power Dashboard</h1>
+      <p>Upload salary history and identify employees whose current compensation is below their strongest historical purchasing power at a recorded compensation date.</p>
+    </div>
+  </header>
+
+  <section id="drop" class="card drop">
+    <h2>Drop compensation spreadsheet here</h2>
+    <p>CSV or Excel (.xlsx / .xls)</p>
+    <button id="choose" type="button" class="primary">Choose file</button>
+    <input id="file" type="file" accept=".csv,.xlsx,.xls" hidden>
+    <div class="hint">Required columns: name · country · date · compensation · currency</div>
+    <div id="status" class="status" aria-live="polite"></div>
+  </section>
+
+  <section class="toolbar">
+    <button id="demo" type="button">Load demo data</button>
+    <select id="countryFilter"><option value="ALL">All countries</option></select>
+    <select id="needFilter">
+      <option value="ALL">All employees</option>
+      <option value="NEED">Raise needed</option>
+      <option value="OK">At / above target</option>
+    </select>
+    <input id="search" placeholder="Search employee…">
+  </section>
+
+  <section class="metrics">
+    <article class="metric"><span>Employees</span><strong id="employeeCount">0</strong></article>
+    <article class="metric"><span>Raise needed</span><strong id="needCount">0</strong></article>
+    <article class="metric"><span>Average required raise</span><strong id="avgRaise">—</strong></article>
+    <article class="metric"><span>Largest real gap</span><strong id="largestGap">—</strong></article>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <h2>Raise priority dashboard</h2>
+      <p>Ranked by the percentage increase required to restore the employee's strongest historical purchasing power at a recorded compensation date.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Employee</th><th>Country</th><th>Current</th><th>Strongest date</th><th>Target today</th><th>Gap</th><th>Raise needed</th><th>Status</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="detail" class="card detail hidden">
+    <div class="detail-head">
+      <div><h2 id="detailName"></h2><p id="detailMeta"></p></div>
+      <button id="closeDetail" type="button">Close</button>
+    </div>
+    <div id="detailCards" class="metrics three"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Salary</th><th>Latest-year equivalent</th><th>Strength</th></tr></thead>
+        <tbody id="history"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card methodology">
+    <h2>Methodology</h2>
+    <p>For each employee, historical compensation is compounded forward using annual CPI for that employee's country. Every salary is expressed at the price level of the employee's latest compensation year. The highest inflation-adjusted salary becomes the strongest historical compensation benchmark. The current salary is compared with that benchmark to calculate the raise required for equal purchasing power.</p>
+    <p class="hint">Prototype CPI dataset covers North Macedonia, Uruguay, Argentina, Brazil, Netherlands and United States for 2017–2026. 2025–2026 figures may include estimates and should be replaced with finalized official observations when available.</p>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

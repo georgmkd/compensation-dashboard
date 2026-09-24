@@ -96,14 +96,26 @@
       p.entries.sort((a,b) => a.date.localeCompare(b.date));
       const latest = p.entries[p.entries.length-1];
       const latestYear = latest.year;
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const comparisonYear = Math.min(currentYear, years[years.length - 1]);
       const normalized = p.entries.map(e => ({
-        ...e, equiv:e.comp * factor(p.country,e.year,latestYear)
+        ...e, equiv:e.comp * factor(p.country,e.year,comparisonYear)
       }));
-      const strongest = [...normalized].sort((a,b) => b.equiv-a.equiv)[0];
+      const strongest = [...normalized].sort((a,b) =>
+        (b.equiv-a.equiv) || b.date.localeCompare(a.date)
+      )[0];
       const target = strongest.equiv;
-      const gap = Math.max(0,target-latest.comp);
-      const raise = latest.comp > 0 ? gap/latest.comp*100 : 0;
-      return {...p,latest,latestYear,normalized,strongest,target,gap,raise,needs:gap>.5};
+      const currentEquivalent = latest.comp * factor(p.country,latest.year,comparisonYear);
+      const gap = Math.max(0,target-currentEquivalent);
+      const raise = currentEquivalent > 0 ? gap/currentEquivalent*100 : 0;
+      const latestDate = new Date(latest.date + "T00:00:00");
+      const ageDays = Math.floor((today - latestDate) / 86400000);
+      const status = latestDate > today ? "Future entry" :
+        latest.year < currentYear ? "Update due" :
+        latest.year === currentYear ? "Current" : "Future entry";
+      return {...p,latest,latestYear,currentYear,comparisonYear,currentEquivalent,
+        normalized,strongest,target,gap,raise,needs:gap>.5,status,ageDays};
     }).sort((a,b) => b.raise-a.raise);
 
     refreshFilters();
@@ -147,7 +159,8 @@
         <td><strong>${money(p.target,p.currency)}</strong></td>
         <td>${p.needs ? money(p.gap,p.currency) : "—"}</td>
         <td><strong>${p.needs ? "+"+p.raise.toFixed(1)+"%" : "0%"}</strong></td>
-        <td><span class="pill ${p.needs?"warning":"ok"}">${p.needs?"Raise needed":"At / above target"}</span></td>
+        <td><span class="pill ${p.status==="Current"?"ok":"warning"}">${p.status}</span>
+          <small>${p.status==="Update due" ? "Latest: "+formatDate(p.latest.date) : (p.needs ? "Raise needed" : "At / above target")}</small></td>
       </tr>`).join("") :
       '<tr><td colspan="8" class="empty">Upload a spreadsheet or load demo data.</td></tr>';
 
@@ -230,9 +243,9 @@
   $("closeDetail").addEventListener("click",()=>$("detail").classList.add("hidden"));
   $("demo").addEventListener("click",()=>{
     raw=[
-      {name:"Jane Janev",country:"North Macedonia",date:"2022-01-01",compensation:4500,currency:"USD"},
-      {name:"Jane Janev",country:"North Macedonia",date:"2024-01-01",compensation:4900,currency:"USD"},
-      {name:"Jane Janev",country:"North Macedonia",date:"2026-01-01",compensation:4900,currency:"USD"},
+      {name:"Michael Anderson",country:"North Macedonia",date:"2022-01-01",compensation:4100,currency:"USD"},
+      {name:"Michael Anderson",country:"North Macedonia",date:"2024-01-01",compensation:4800,currency:"USD"},
+      {name:"Michael Anderson",country:"North Macedonia",date:"2026-01-01",compensation:4800,currency:"USD"},
       {name:"John Smith",country:"USA",date:"2021-01-01",compensation:6000,currency:"USD"},
       {name:"John Smith",country:"USA",date:"2024-01-01",compensation:6900,currency:"USD"},
       {name:"John Smith",country:"USA",date:"2026-01-01",compensation:7000,currency:"USD"},
